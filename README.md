@@ -60,9 +60,18 @@ void setup() {
   Serial.begin(115200);
   WiFi.begin(ssid, password);
   
-  while (WiFi.status() != WL_CONNECTED) {
+  // Wait for WiFi connection with timeout
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
     delay(500);
     Serial.print(".");
+    attempts++;
+  }
+  
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\nWiFi connected");
+  } else {
+    Serial.println("\nWiFi connection failed");
   }
   
   client.setServer(mqtt_server, 1883);
@@ -90,9 +99,12 @@ void loop() {
   }
   client.loop();
   
-  // Publish example
-  client.publish("home/valve/status", "online");
-  delay(5000);
+  // Publish status periodically (example - use longer intervals in production)
+  static unsigned long lastPublish = 0;
+  if (millis() - lastPublish > 60000) { // Every 60 seconds
+    client.publish("home/valve/status", "online");
+    lastPublish = millis();
+  }
 }
 ```
 
